@@ -28,6 +28,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/")
+def read_root():
+    """Root endpoint welcoming users or directing to API documentation."""
+    return {"message": "Welcome to VideoRAG Backend API! Access API documentation at /docs"}
+
 @app.get("/health")
 def health_check():
     """Health check endpoint to verify backend status."""
