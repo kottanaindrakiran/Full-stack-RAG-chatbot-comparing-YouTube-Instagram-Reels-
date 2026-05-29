@@ -2,20 +2,10 @@ import os
 from typing import TypedDict, List, Dict, Any, AsyncGenerator
 import chromadb
 from openai import OpenAI
-from langchain_openai import ChatOpenAI
-from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
-from langgraph.graph import StateGraph, END
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
-
-# Setup OpenAI client for embeddings
-openai_client = OpenAI()
-
-# Initialize ChromaDB client
-chroma_path = os.path.join(os.path.dirname(__file__), "chroma_db")
-chroma_client = chromadb.PersistentClient(path=chroma_path)
 
 # LangGraph State definition
 class RAGState(TypedDict):
@@ -61,6 +51,15 @@ def retrieve_node(state: RAGState) -> Dict[str, Any]:
     query = state["query"]
     print(f"Retrieving context for query: {query}")
     
+    # Initialize clients inside function to prevent startup import hangs
+    import chromadb
+    from chromadb.config import Settings
+    from openai import OpenAI
+    
+    openai_client = OpenAI()
+    chroma_path = os.path.join(os.path.dirname(__file__), "chroma_db")
+    chroma_client = chromadb.PersistentClient(path=chroma_path, settings=Settings(anonymized_telemetry=False))
+    
     try:
         # Embed the search query
         try:
@@ -105,6 +104,9 @@ def retrieve_node(state: RAGState) -> Dict[str, Any]:
 
 def generate_node(state: RAGState) -> Dict[str, Any]:
     """Generates standard RAG response (non-streaming)."""
+    from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
+    from langchain_openai import ChatOpenAI
+
     query = state["query"]
     history = state["history"]
     context = state["context"]
@@ -135,19 +137,27 @@ def generate_node(state: RAGState) -> Dict[str, Any]:
         fallback_text = generate_fallback_response(query, context)
         return {"response": fallback_text}
 
-# Define LangGraph workflow
-workflow = StateGraph(RAGState)
-workflow.add_node("retrieve", retrieve_node)
-workflow.add_node("generate", generate_node)
-
-workflow.set_entry_point("retrieve")
-workflow.add_edge("retrieve", "generate")
-workflow.add_edge("generate", END)
-
-rag_graph = workflow.compile()
+# Define LangGraph workflow (wrapped to prevent slow startup blocking)
+try:
+    from langgraph.graph import StateGraph, END
+    workflow = StateGraph(RAGState)
+    workflow.add_node("retrieve", retrieve_node)
+    workflow.add_node("generate", generate_node)
+    
+    workflow.set_entry_point("retrieve")
+    workflow.add_edge("retrieve", "generate")
+    workflow.add_edge("generate", END)
+    
+    rag_graph = workflow.compile()
+except Exception as e:
+    print(f"LangGraph compilation skipped: {e}")
+    rag_graph = None
 
 async def stream_rag_chat(query: str, history: List[Dict[str, str]]) -> AsyncGenerator[str, None]:
     """Orchestrates RAG context retrieval and yields streaming SSE tokens."""
+    from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
+    from langchain_openai import ChatOpenAI
+
     # 1. Run retrieval node via RAG state
     state = RAGState(query=query, history=history, context="", response="")
     retrieved_state = retrieve_node(state)
