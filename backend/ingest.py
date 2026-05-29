@@ -6,7 +6,7 @@ from typing import Optional, Tuple, Dict, Any
 from youtube_transcript_api import YouTubeTranscriptApi
 from openai import OpenAI
 import chromadb
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from dotenv import load_dotenv
 
 # Import Pydantic models
