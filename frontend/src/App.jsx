@@ -96,23 +96,34 @@ However, Video B (Instagram Reel) achieved a relatively high engagement rate of 
   }
 ];
 
+const WELCOME_CHAT = [
+  {
+    role: 'assistant',
+    content: `Welcome to **VideoRAG**! 👋
+
+Enter a YouTube video URL and an Instagram Reel URL in the inputs above, then click **"Analyze videos"** to start the comparison.
+
+*If you don't have URLs ready, click **"Load Demo URLs"** in the controls bar to test the system in Demo Mode.*`
+  }
+];
+
 function App() {
   // Input URL states
-  const [urlA, setUrlA] = useState('https://youtube.com/watch?v=VII');
-  const [urlB, setUrlB] = useState('https://instagram.com/reel/REEL_');
+  const [urlA, setUrlA] = useState('');
+  const [urlB, setUrlB] = useState('');
   
   // Status and loading states
-  const [statusText, setStatusText] = useState('Transcripts · Metadata · Embeddings · Ready in ~15s');
+  const [statusText, setStatusText] = useState('Enter video URLs to begin analysis.');
   const [isIngesting, setIsIngesting] = useState(false);
   const [ingestSuccess, setIngestSuccess] = useState(null); // null, true, false
   
-  // Video metadata states (loaded with initial screenshot mockup details)
-  const [videoA, setVideoA] = useState(INITIAL_VIDEO_A);
-  const [videoB, setVideoB] = useState(INITIAL_VIDEO_B);
+  // Video metadata states (starts null to remove initial mock cards)
+  const [videoA, setVideoA] = useState(null);
+  const [videoB, setVideoB] = useState(null);
   
   // Chat states
   const [chatInput, setChatInput] = useState('');
-  const [chatHistory, setChatHistory] = useState(INITIAL_CHAT);
+  const [chatHistory, setChatHistory] = useState(WELCOME_CHAT);
   const [isStreaming, setIsStreaming] = useState(false);
   
   const messagesEndRef = useRef(null);
@@ -399,6 +410,20 @@ Feel free to ask me to compare their hooks, engagement rates, or overall content
           <Cpu size={16} className={isIngesting ? 'spin-animation' : ''} />
           Analyze videos
         </button>
+        {(!urlA && !urlB) && (
+          <button 
+            type="button"
+            className="btn-quick-reply"
+            onClick={() => {
+              setUrlA('https://youtube.com/watch?v=VII');
+              setUrlB('https://instagram.com/reel/REEL_');
+              setStatusText('Demo URLs loaded. Click "Analyze videos" to trigger Demo Mode.');
+            }}
+            style={{ width: 'auto', padding: '10px 16px', fontSize: '13px', margin: 0 }}
+          >
+            Load Demo URLs
+          </button>
+        )}
         <span className="status-text">
           {isIngesting ? (
             <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -422,76 +447,98 @@ Feel free to ask me to compare their hooks, engagement rates, or overall content
         {/* Video Cards (Left Side) */}
         <div className="video-cards-column">
           {/* Video A */}
-          <div className="video-card">
-            <div className="card-badge yt">Video A · YouTube</div>
-            <div className="video-preview-box">
-              <Play className="play-overlay-icon" size={32} fill="currentColor" />
-            </div>
-            <div className="video-title-text" title={videoA.title}>
-              {videoA.title}
-            </div>
-            <div className="stats-grid">
-              <div className="stat-item-box">
-                <span className="stat-label">Views</span>
-                <span className="stat-value">{formatNumber(videoA.views)}</span>
-              </div>
-              <div className="stat-item-box">
-                <span className="stat-label">Likes</span>
-                <span className="stat-value">{formatNumber(videoA.likes)}</span>
-              </div>
-              <div className="stat-item-box">
-                <span className="stat-label">Comments</span>
-                <span className="stat-value">{formatNumber(videoA.comments)}</span>
-              </div>
-              <div className="stat-item-box">
-                <span className="stat-label">Duration</span>
-                <span className="stat-value">{videoA.duration_formatted}</span>
+          {!videoA ? (
+            <div className="video-card empty-state-card">
+              <div className="card-badge yt">Video A · YouTube</div>
+              <div className="empty-card-body">
+                <Youtube size={48} className="empty-card-icon yt" />
+                <span className="empty-card-title">YouTube Video Metadata</span>
+                <span className="empty-card-subtitle">Pending analysis</span>
               </div>
             </div>
-            <div className="engagement-banner active">
-              <span>Engagement rate</span>
-              <span className="engagement-value">{videoA.engagement_rate}%</span>
+          ) : (
+            <div className="video-card">
+              <div className="card-badge yt">Video A · YouTube</div>
+              <div className="video-preview-box">
+                <Play className="play-overlay-icon" size={32} fill="currentColor" />
+              </div>
+              <div className="video-title-text" title={videoA.title}>
+                {videoA.title}
+              </div>
+              <div className="stats-grid">
+                <div className="stat-item-box">
+                  <span className="stat-label">Views</span>
+                  <span className="stat-value">{formatNumber(videoA.views)}</span>
+                </div>
+                <div className="stat-item-box">
+                  <span className="stat-label">Likes</span>
+                  <span className="stat-value">{formatNumber(videoA.likes)}</span>
+                </div>
+                <div className="stat-item-box">
+                  <span className="stat-label">Comments</span>
+                  <span className="stat-value">{formatNumber(videoA.comments)}</span>
+                </div>
+                <div className="stat-item-box">
+                  <span className="stat-label">Duration</span>
+                  <span className="stat-value">{videoA.duration_formatted}</span>
+                </div>
+              </div>
+              <div className="engagement-banner active">
+                <span>Engagement rate</span>
+                <span className="engagement-value">{videoA.engagement_rate}%</span>
+              </div>
+              <div className="card-footer-text">
+                Creator: {videoA.creator} · {formatNumber(videoA.followers)} followers
+              </div>
             </div>
-            <div className="card-footer-text">
-              Creator: {videoA.creator} · {formatNumber(videoA.followers)} followers
-            </div>
-          </div>
+          )}
 
           {/* Video B */}
-          <div className="video-card">
-            <div className="card-badge ig">Video B · Instagram</div>
-            <div className="video-preview-box">
-              <Play className="play-overlay-icon" size={32} fill="currentColor" />
-            </div>
-            <div className="video-title-text" title={videoB.title}>
-              {videoB.title}
-            </div>
-            <div className="stats-grid">
-              <div className="stat-item-box">
-                <span className="stat-label">Views</span>
-                <span className="stat-value">{formatNumber(videoB.views)}</span>
-              </div>
-              <div className="stat-item-box">
-                <span className="stat-label">Likes</span>
-                <span className="stat-value">{formatNumber(videoB.likes)}</span>
-              </div>
-              <div className="stat-item-box">
-                <span className="stat-label">Comments</span>
-                <span className="stat-value">{formatNumber(videoB.comments)}</span>
-              </div>
-              <div className="stat-item-box">
-                <span className="stat-label">Duration</span>
-                <span className="stat-value">{videoB.duration_formatted}</span>
+          {!videoB ? (
+            <div className="video-card empty-state-card">
+              <div className="card-badge ig">Video B · Instagram</div>
+              <div className="empty-card-body">
+                <Instagram size={48} className="empty-card-icon ig" />
+                <span className="empty-card-title">Instagram Reel Metadata</span>
+                <span className="empty-card-subtitle">Pending analysis</span>
               </div>
             </div>
-            <div className="engagement-banner ig">
-              <span>Engagement rate</span>
-              <span className="engagement-value">{videoB.engagement_rate}%</span>
+          ) : (
+            <div className="video-card">
+              <div className="card-badge ig">Video B · Instagram</div>
+              <div className="video-preview-box">
+                <Play className="play-overlay-icon" size={32} fill="currentColor" />
+              </div>
+              <div className="video-title-text" title={videoB.title}>
+                {videoB.title}
+              </div>
+              <div className="stats-grid">
+                <div className="stat-item-box">
+                  <span className="stat-label">Views</span>
+                  <span className="stat-value">{formatNumber(videoB.views)}</span>
+                </div>
+                <div className="stat-item-box">
+                  <span className="stat-label">Likes</span>
+                  <span className="stat-value">{formatNumber(videoB.likes)}</span>
+                </div>
+                <div className="stat-item-box">
+                  <span className="stat-label">Comments</span>
+                  <span className="stat-value">{formatNumber(videoB.comments)}</span>
+                </div>
+                <div className="stat-item-box">
+                  <span className="stat-label">Duration</span>
+                  <span className="stat-value">{videoB.duration_formatted}</span>
+                </div>
+              </div>
+              <div className="engagement-banner ig">
+                <span>Engagement rate</span>
+                <span className="engagement-value">{videoB.engagement_rate}%</span>
+              </div>
+              <div className="card-footer-text">
+                Creator: {videoB.creator} · {formatNumber(videoB.followers)} followers
+              </div>
             </div>
-            <div className="card-footer-text">
-              Creator: {videoB.creator} · {formatNumber(videoB.followers)} followers
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Chat Panel (Right Side) */}
@@ -582,7 +629,7 @@ Feel free to ask me to compare their hooks, engagement rates, or overall content
         </div>
       </div>
       
-      {/* Styles Injection for Spinners */}
+      {/* Styles Injection for Spinners and Empty Cards */}
       <style>{`
         .spin-animation {
           animation: spin-rotate 1.5s linear infinite;
@@ -590,6 +637,47 @@ Feel free to ask me to compare their hooks, engagement rates, or overall content
         @keyframes spin-rotate {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
+        }
+        .empty-state-card {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          min-height: 340px;
+          border: 1px dashed var(--border-color);
+          background: rgba(30, 30, 30, 0.4);
+        }
+        .empty-card-body {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 12px;
+          margin-top: auto;
+          margin-bottom: auto;
+          color: var(--text-muted);
+        }
+        .empty-card-icon {
+          opacity: 0.25;
+          transition: opacity 0.2s;
+        }
+        .empty-state-card:hover .empty-card-icon {
+          opacity: 0.5;
+        }
+        .empty-card-icon.yt {
+          color: var(--brand-yt);
+        }
+        .empty-card-icon.ig {
+          color: var(--brand-ig);
+        }
+        .empty-card-title {
+          font-family: var(--font-display);
+          font-size: 16px;
+          font-weight: 600;
+          color: var(--text-main);
+        }
+        .empty-card-subtitle {
+          font-size: 13px;
         }
       `}</style>
     </div>
