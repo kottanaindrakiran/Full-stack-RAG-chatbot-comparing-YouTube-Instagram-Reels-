@@ -3,6 +3,8 @@
 A full-stack RAG (Retrieval-Augmented Generation) chatbot application for analyzing and comparing two social media videos side-by-side (YouTube and Instagram Reels). The app fetches transcripts and metrics, indexes them in a local vector database, and lets you ask comparative questions via a streaming conversational AI chat interface with memory.
 
 ---
+<img width="1821" height="981" alt="image" src="https://github.com/user-attachments/assets/41fa9abb-f614-433b-a32d-9f63922c5b46" />
+
 
 ## What It Does
 
