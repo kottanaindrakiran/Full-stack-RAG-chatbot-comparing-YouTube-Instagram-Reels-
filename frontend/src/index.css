@@ -306,6 +306,7 @@ body {
   min-height: 48px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -465,7 +466,52 @@ body {
 }
 
 .assistant-message-content {
-  white-space: pre-line;
+  white-space: normal;
+}
+
+.assistant-message-content p {
+  margin: 0 0 12px 0;
+}
+
+.assistant-message-content p:last-child {
+  margin-bottom: 0;
+}
+
+.assistant-message-content h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 16px 0 8px 0;
+  color: #fff;
+}
+
+.assistant-message-content h3:first-child {
+  margin-top: 0;
+}
+
+.assistant-message-content ul, .assistant-message-content ol {
+  margin: 0 0 12px 20px;
+  padding: 0;
+}
+
+.assistant-message-content li {
+  margin-bottom: 6px;
+}
+
+.assistant-message-content strong {
+  color: #fff;
+  font-weight: 600;
+}
+
+.assistant-message-content em {
+  font-style: italic;
+}
+
+.assistant-message-content code {
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 13px;
 }
 
 /* Custom Citation Badges */

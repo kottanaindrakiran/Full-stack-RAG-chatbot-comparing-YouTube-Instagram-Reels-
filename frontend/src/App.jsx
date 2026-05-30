@@ -12,6 +12,7 @@ import {
   HelpCircle,
   Cpu
 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 
 // Custom SVG components for Youtube and Instagram (since Lucide v1.x deprecated brand icons)
 const Youtube = ({ size = 24, fill = "none", className = "" }) => (
@@ -241,39 +242,34 @@ Feel free to ask me to compare their hooks, engagement rates, or overall content
         
         buffer += decoder.decode(value, { stream: true });
         
-        // Split on double newlines to isolate SSE data blocks
-        let boundary = buffer.indexOf('\n\n');
-        while (boundary !== -1) {
-          const part = buffer.slice(0, boundary).trim();
-          buffer = buffer.slice(boundary + 2);
-          
-          if (part) {
-            const lines = part.split('\n');
-            for (const line of lines) {
-              if (line.startsWith('data: ')) {
-                const token = line.slice(6);
-                
-                let cleanToken = token;
-                try {
-                  // If token is JSON encoded (like with quotes), parse it
-                  if (token.startsWith('"') && token.endsWith('"')) {
-                    cleanToken = JSON.parse(token);
-                  }
-                } catch (_) {}
-                
-                assistantText += cleanToken;
-                
-                setChatHistory(prev => {
-                  const copy = [...prev];
-                  if (copy.length > 0) {
-                    copy[copy.length - 1] = { role: 'assistant', content: assistantText };
-                  }
-                  return copy;
-                });
+        // Split the buffer by lines (handles both \r\n and \n)
+        const lines = buffer.split(/\r?\n/);
+        
+        // Keep the last partial line in the buffer
+        buffer = lines.pop() || '';
+        
+        for (const line of lines) {
+          const cleanLine = line.endsWith('\r') ? line.slice(0, -1) : line;
+          if (cleanLine.startsWith('data: ')) {
+            const token = cleanLine.slice(6);
+            let cleanToken = token;
+            try {
+              // If token is JSON encoded (like with quotes), parse it
+              if (token.startsWith('"') && token.endsWith('"')) {
+                cleanToken = JSON.parse(token);
               }
-            }
+            } catch (_) {}
+            
+            assistantText += cleanToken;
+            
+            setChatHistory(prev => {
+              const copy = [...prev];
+              if (copy.length > 0) {
+                copy[copy.length - 1] = { role: 'assistant', content: assistantText };
+              }
+              return copy;
+            });
           }
-          boundary = buffer.indexOf('\n\n');
         }
       }
     } catch (err) {
@@ -297,41 +293,33 @@ Feel free to ask me to compare their hooks, engagement rates, or overall content
   const renderMessageContent = (text) => {
     if (!text) return '';
     
-    // Pattern to match [Video A · chunk N] or [Video B · chunk N]
-    const regex = /\[Video\s+(A|B)\s+·\s+chunk\s+(\d+)\]/g;
-    const elements = [];
-    let lastIndex = 0;
-    let match;
+    // Replace citations with markdown links first
+    const preprocessedText = text.replace(
+      /\[Video\s+(A|B)\s+·\s+chunk\s+(\d+)\]/g,
+      (_, video, chunk) => `[${video}-chunk ${chunk}](#citation-${video}-${chunk})`
+    );
     
-    while ((match = regex.exec(text)) !== null) {
-      const matchIndex = match.index;
-      const videoLetter = match[1]; // A or B
-      const chunkNum = match[2]; // N
-      
-      // Add preceding text
-      if (matchIndex > lastIndex) {
-        elements.push(text.substring(lastIndex, matchIndex));
-      }
-      
-      // Add custom styled citation badge
-      const badgeClass = videoLetter === 'A' ? 'citation-badge vid-a' : 'citation-badge vid-b';
-      elements.push(
-        <span key={matchIndex} className={badgeClass}>
-          {videoLetter}-chunk {chunkNum}
-        </span>
-      );
-      
-      lastIndex = regex.lastIndex;
-    }
-    
-    if (lastIndex < text.length) {
-      elements.push(text.substring(lastIndex));
-    }
-    
-    return elements.length > 0 ? (
-      <span style={{ whiteSpace: 'pre-line' }}>{elements}</span>
-    ) : (
-      <span style={{ whiteSpace: 'pre-line' }}>{text}</span>
+    return (
+      <ReactMarkdown
+        components={{
+          a: ({ href, children, ...props }) => {
+            if (href && href.startsWith('#citation-')) {
+              const parts = href.split('-');
+              const videoLetter = parts[1]; // A or B
+              const chunkNum = parts[2];
+              const badgeClass = videoLetter === 'A' ? 'citation-badge vid-a' : 'citation-badge vid-b';
+              return (
+                <span className={badgeClass}>
+                  {videoLetter}-chunk {chunkNum}
+                </span>
+              );
+            }
+            return <a href={href} {...props}>{children}</a>;
+          }
+        }}
+      >
+        {preprocessedText}
+      </ReactMarkdown>
     );
   };
 
