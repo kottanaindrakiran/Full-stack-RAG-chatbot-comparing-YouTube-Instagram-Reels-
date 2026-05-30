@@ -5,10 +5,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from sse_starlette.sse import EventSourceResponse
 from dotenv import load_dotenv
 
-# Import Pydantic models and functions
-from backend.models import IngestRequest, IngestResponse, ChatRequest
-from backend.ingest import ingest_videos
-from backend.rag import stream_rag_chat
+try:
+    from backend.models import IngestRequest, IngestResponse, ChatRequest
+    from backend.ingest import ingest_videos
+    from backend.rag import stream_rag_chat
+except ModuleNotFoundError:
+    from models import IngestRequest, IngestResponse, ChatRequest
+    from ingest import ingest_videos
+    from rag import stream_rag_chat
 
 # Load environment variables
 load_dotenv()
@@ -82,4 +86,8 @@ async def chat_endpoint(request: ChatRequest):
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
     print(f"Starting VideoRAG backend on port {port}...")
-    uvicorn.run("backend.main:app", host="0.0.0.0", port=port, reload=False)
+    try:
+        import backend
+        uvicorn.run("backend.main:app", host="0.0.0.0", port=port, reload=False)
+    except ModuleNotFoundError:
+        uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)

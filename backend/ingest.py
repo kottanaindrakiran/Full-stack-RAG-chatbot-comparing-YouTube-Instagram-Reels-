@@ -17,7 +17,10 @@ import concurrent.futures
 ingest_executor = concurrent.futures.ThreadPoolExecutor(max_workers=20)
 
 # Import Pydantic models
-from backend.models import VideoMetadata
+try:
+    from backend.models import VideoMetadata
+except ModuleNotFoundError:
+    from models import VideoMetadata
 
 # Load environment variables
 load_dotenv()
