@@ -53,7 +53,7 @@ const Instagram = ({ size = 24, className = "" }) => (
 );
 
 // API base path - can be configured via env
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/+$/, '');
 
 // Mock/Initial data matching the screenshot exactly
 const INITIAL_VIDEO_A = {
