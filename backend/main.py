@@ -24,9 +24,18 @@ app = FastAPI(
 )
 
 # Enable CORS for frontend integration
+origins = [
+    "https://full-stack-rag-chatbot-comparing-yo.vercel.app",
+    "http://localhost:5173",
+    "http://localhost:3000",
+]
+allowed_origins_env = os.getenv("ALLOWED_ORIGINS")
+if allowed_origins_env:
+    origins = [orig.strip() for orig in allowed_origins_env.split(",") if orig.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins in development
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
